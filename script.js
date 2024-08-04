@@ -26,9 +26,9 @@ const implementos = {
     "Baú fechado (grande)": 250,
     "Baú fechado (médio)": 200,
     "Baú fechado (pequeno)": 150,
-    "Betoneira": 690,
-    "Bomba de concreto": 1190,
-    "Caçamba basculante": 370,
+    "Betoneira": 350,
+    "Bomba de concreto": 790,
+    "Caçamba basculante": 250,
     "Carreta 2 eixos": 650,
     "Carreta 3 eixos": 850,
     "Empilhadeira": 690,
@@ -38,7 +38,7 @@ const implementos = {
     "Guindaste médio (10 a 50t)": 1390,
     "Lança hidráulica": 1380,
     "Manipulador Telescópico": 2250,
-    "Mini Bomba": 790,
+    "Mini Bomba": 590,
     "Mini carregadeira": 1150,
     "Motoniveladora": 2390,
     "Munck grande (mais de 15t)": 1380,
@@ -49,7 +49,7 @@ const implementos = {
     "Retroescavadeira": 2290,
     "Roll on/Roll off": 750,
     "Tanque de combustível ou água": 450,
-    "Thermoking (refrigerador)": 370,
+    "Thermoking (refrigerador)": 270,
     "Trator de Esteira": 2280
 };
 
@@ -81,8 +81,25 @@ let veiculosAdicionados = [];
 let desconto = 0;
 let cliente = {};
 let garantia = '';
-let registro = ''; // Variável para armazenar o tempo de registro
-let condicaoPagamento = ''; // Variável para armazenar a condição de pagamento
+let registro = '';
+let condicaoPagamento = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+    preencherSelect('tipo-veiculo', veiculos);
+    preencherSelect('tipo-implemento', implementos);
+    preencherSelect('localizacao', localizacoes);
+    preencherSelect('registro', { "1 ano": 1, "2 anos": 2, "3 anos": 3, "4 anos": 4, "vitalício": "vitalício" });
+});
+
+function preencherSelect(elementId, options) {
+    const select = document.getElementById(elementId);
+    for (const key in options) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = key;
+        select.appendChild(option);
+    }
+}
 
 function mostrarTela(telaId) {
     document.querySelectorAll('.tela').forEach(tela => {
@@ -149,6 +166,10 @@ function aplicarCondicaoPagamento() {
     mostrarTela('tela-enviado');
 }
 
+function gerarNumeroOrcamento() {
+    return Math.floor(Math.random() * (400 - 150 + 1)) + 150;
+}
+
 function gerarOrcamento() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -157,7 +178,7 @@ function gerarOrcamento() {
     const dataVencimento = new Date();
     dataVencimento.setMonth(dataVencimento.getMonth() + 1);
 
-    const numeroOrcamento = 150 + veiculosAdicionados.length;
+    const numeroOrcamento = gerarNumeroOrcamento();
 
     doc.setFontSize(22);
     doc.text(`ORÇAMENTO Nº ${numeroOrcamento} / ${dataEmissao.getFullYear()}`, 10, 16);
@@ -184,7 +205,7 @@ function gerarOrcamento() {
     doc.text(`${cliente.telefone}`, 11, 66);
 
     let valorTotal = 0;
-    const rows = veiculosAdicionados.map((item, index) => {
+    const rows = veiculosAdicionados.map((item) => {
         const valorVeiculo = veiculos[item.tipoVeiculo];
         const valorImplemento = implementos[item.tipoImplemento];
         const valorLocalizacao = localizacoes[item.localizacao];
@@ -250,6 +271,88 @@ function gerarOrcamento() {
     doc.save(`orcamento_${numeroOrcamento}.pdf`);
 }
 
+function gerarOrcamentoSemValor() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const dataEmissao = new Date();
+    const dataVencimento = new Date();
+    dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+
+    const numeroOrcamento = gerarNumeroOrcamento();
+
+    doc.setFontSize(22);
+    doc.text(`ORÇAMENTO Nº ${numeroOrcamento} / ${dataEmissao.getFullYear()}`, 10, 16);
+
+    doc.setFontSize(13);
+    doc.text('VCR VACINA CONTRA ROUBO LTDA', 10, 30);
+
+    doc.setFontSize(10);
+    doc.text('luisfelipe@vacinacontraroubo.com.br', 10, 36);
+    doc.setFontSize(9);
+    doc.text('(21) 97907-1371', 10, 40);
+    doc.setFontSize(8);
+    doc.text(`Data de Emissão: ${dataEmissao.toLocaleDateString()}`, 160, 14);
+    doc.text(`Data de Vencimento: ${dataVencimento.toLocaleDateString()}`, 10, 290);
+    doc.setFontSize(9);
+    doc.text('www.vacinacontraroubo.com', 90, 290);
+
+    doc.setFontSize(13);
+    doc.text(` ${cliente.nome}`, 10, 51);
+    doc.setFontSize(10);
+    doc.text(` ${cliente.email}`, 10, 61);
+    doc.setFontSize(9);
+    doc.text(` CNPJ/CPF: ${cliente.cpfCnpj}`, 10, 56);
+    doc.text(`${cliente.telefone}`, 11, 66);
+
+    const rows = veiculosAdicionados.map((item) => {
+        const valorVeiculo = veiculos[item.tipoVeiculo];
+        const valorImplemento = implementos[item.tipoImplemento];
+        const valorLocalizacao = localizacoes[item.localizacao];
+        const valorUnitario = valorVeiculo + valorImplemento + valorLocalizacao;
+
+        return [
+            item.tipoVeiculo,
+            item.tipoImplemento,
+            item.quantidade,
+            `R$ ${valorUnitario.toFixed(2)}`
+        ];
+    });
+
+    doc.autoTable({
+        head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário']],
+        body: rows,
+        startY: 75,
+        theme: 'grid'
+    });
+
+    let y = doc.previousAutoTable.finalY + 10;
+
+    if (garantia) {
+        doc.setFontSize(11);
+        doc.text(`Garantia de regravação: ${garantia}`, 10, y);
+        y += 10;
+    }
+
+    if (registro) {
+        doc.text(`Registro no Sistema Nacional: ${registro}`, 10, y);
+        y += 5;
+        doc.setFontSize(9);
+        doc.text(`www.sinid.org.br`, 10, y);
+    }
+
+    if (condicaoPagamento) {
+        y += 10;
+        doc.setFontSize(11);
+        doc.text(`Condição de Pagamento:`, 10, y);
+        y += 2;
+        doc.setFontSize(10);
+        doc.text(condicaoPagamento, 10, y + 5);
+    }
+
+    doc.save(`orcamento_sem_valor_${numeroOrcamento}.pdf`);
+}
+
 function resetarOrcamento() {
     veiculosAdicionados = [];
     desconto = 0;
@@ -265,38 +368,3 @@ function resetarOrcamento() {
     document.getElementById('condicao-pagamento').value = '';
     mostrarTela('tela-inicial');
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const tipoVeiculoSelect = document.getElementById('tipo-veiculo');
-    const tipoImplementoSelect = document.getElementById('tipo-implemento');
-    const localizacaoSelect = document.getElementById('localizacao');
-    const registroSelect = document.getElementById('registro'); // Inicialização do select de registro
-
-    for (const veiculo in veiculos) {
-        const option = document.createElement('option');
-        option.value = veiculo;
-        option.textContent = veiculo;
-        tipoVeiculoSelect.appendChild(option);
-    }
-
-    for (const implemento in implementos) {
-        const option = document.createElement('option');
-        option.value = implemento;
-        option.textContent = implemento;
-        tipoImplementoSelect.appendChild(option);
-    }
-
-    for (const localizacao in localizacoes) {
-        const option = document.createElement('option');
-        option.value = localizacao;
-        option.textContent = localizacao;
-        localizacaoSelect.appendChild(option);
-    }
-
-    for (const tempoRegistro in { "1 ano": 1, "2 anos": 2, "3 anos": 3, "4 anos": 4, "vitalício": "vitalício" }) {
-        const option = document.createElement('option');
-        option.value = tempoRegistro;
-        option.textContent = tempoRegistro;
-        registroSelect.appendChild(option);
-    }
-});
