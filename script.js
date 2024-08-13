@@ -311,23 +311,41 @@ function gerarOrcamentoSemValor() {
         const valorImplemento = implementos[item.tipoImplemento];
         const valorLocalizacao = localizacoes[item.localizacao];
         const valorUnitario = valorVeiculo + valorImplemento + valorLocalizacao;
-        const valorFinalComDesconto = valorUnitario - (valorUnitario * desconto / 100);
 
-        return [
-            item.tipoVeiculo,
-            item.tipoImplemento,
-            item.quantidade,
-            `R$ ${valorUnitario.toFixed(2)}`,
-            `R$ ${valorFinalComDesconto.toFixed(2)}`
-        ];
+        if (desconto > 0) {
+            const valorFinalComDesconto = valorUnitario - (valorUnitario * desconto / 100);
+            return [
+                item.tipoVeiculo,
+                item.tipoImplemento,
+                item.quantidade,
+                `R$ ${valorUnitario.toFixed(2)}`,
+                `R$ ${valorFinalComDesconto.toFixed(2)}`
+            ];
+        } else {
+            return [
+                item.tipoVeiculo,
+                item.tipoImplemento,
+                item.quantidade,
+                `R$ ${valorUnitario.toFixed(2)}`
+            ];
+        }
     });
 
-    doc.autoTable({
-        head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário', 'Valor Final com Desconto']],
-        body: rows,
-        startY: 75,
-        theme: 'grid'
-    });
+    if (desconto > 0) {
+        doc.autoTable({
+            head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário', 'Valor Final com Desconto']],
+            body: rows,
+            startY: 75,
+            theme: 'grid'
+        });
+    } else {
+        doc.autoTable({
+            head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário']],
+            body: rows,
+            startY: 75,
+            theme: 'grid'
+        });
+    }
 
     let y = doc.previousAutoTable.finalY + 10;
 
@@ -355,6 +373,7 @@ function gerarOrcamentoSemValor() {
 
     doc.save(`orcamento_sem_valor_${numeroOrcamento}.pdf`);
 }
+
 
 
 function resetarOrcamento() {
