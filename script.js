@@ -63,7 +63,7 @@ const localizacoes = {
     "São Gonçalo, Niterói, Itaboraí": 60,
     "Região dos Lagos": 100,
     "Interior do Rio": 90,
-    "R$50" :50,
+    "R$50": 50,
     "R$100": 100,
     "R$150": 150,
     "R$200": 200,
@@ -84,6 +84,7 @@ let cliente = {};
 let garantia = '';
 let registro = '';
 let condicaoPagamento = '';
+let indicacao = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     preencherSelect('tipo-veiculo', veiculos);
@@ -114,7 +115,6 @@ function cadastrarCliente() {
     const telefone = document.getElementById('telefone-cliente').value;
     const email = document.getElementById('email-cliente').value;
     const cpfCnpj = document.getElementById('cpf-cnpj-cliente').value;
-
     if (nome && telefone && email && cpfCnpj) {
         cliente = { nome, telefone, email, cpfCnpj };
         mostrarTela('tela-inicial');
@@ -128,7 +128,6 @@ function enviarVeiculo() {
     const tipoImplemento = document.getElementById('tipo-implemento').value;
     const quantidade = parseInt(document.getElementById('quantidade').value);
     const localizacao = document.getElementById('localizacao').value;
-
     if (tipoVeiculo && tipoImplemento && quantidade > 0 && localizacao) {
         veiculosAdicionados.push({
             tipoVeiculo,
@@ -167,14 +166,47 @@ function aplicarCondicaoPagamento() {
     mostrarTela('tela-enviado');
 }
 
+function salvarIndicacao() {
+    const nomeIndicador = document.getElementById('nome-indicador').value;
+    const emailIndicador = document.getElementById('email-indicador').value;
+    if (nomeIndicador && emailIndicador) {
+        indicacao = { nome: nomeIndicador, email: emailIndicador };
+        mostrarTela('tela-inicial');
+    } else {
+        alert('Por favor, preencha todos os campos.');
+    }
+}
+
 function gerarNumeroOrcamento() {
     return Math.floor(Math.random() * (400 - 150 + 1)) + 150;
+}
+
+let vendedor = {
+    nome: 'Luis Felipe Neves - Diretor Comercial',
+    email: 'luisfelipe@vacinacontraroubo.com.br',
+    telefone: '(21) 97907-1371'
+};
+
+function selecionarVendedor() {
+    const vendedorSelecionado = document.getElementById('selecionar-vendedor').value;
+    if (vendedorSelecionado === 'luisfelipe') {
+        vendedor = {
+            nome: 'Luis Felipe Neves - Diretor Comercial',
+            email: 'luisfelipe@vacinacontraroubo.com.br',
+            telefone: '(21) 97907-1371'
+        };
+    } else if (vendedorSelecionado === 'mac') {
+        vendedor = {
+            nome: 'Mac Dowell - Executivo de contas',
+            email: 'comercial@vacinacontraroubo.com',
+            telefone: '(21) 99177-0196'
+        };
+    }
 }
 
 function gerarOrcamento() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
     const dataEmissao = new Date();
     const dataVencimento = new Date();
     dataVencimento.setMonth(dataVencimento.getMonth() + 1);
@@ -187,23 +219,40 @@ function gerarOrcamento() {
     doc.setFontSize(13);
     doc.text('VCR VACINA CONTRA ROUBO LTDA', 10, 30);
 
+    // Adiciona o nome e o cargo do vendedor
+    doc.setFontSize(11);
+    doc.text(vendedor.nome, 10, 36);
+    
+    // Usa as informações do vendedor selecionado
     doc.setFontSize(10);
-    doc.text('luisfelipe@vacinacontraroubo.com.br', 10, 36);
+    doc.text(vendedor.email, 10, 42);
     doc.setFontSize(9);
-    doc.text('(21) 97907-1371', 10, 40);
+    doc.text(vendedor.telefone, 10, 46);
+
+    // Reposiciona as datas de emissão e vencimento
     doc.setFontSize(8);
     doc.text(`Data de Emissão: ${dataEmissao.toLocaleDateString()}`, 160, 14);
-    doc.text(`Data de Vencimento: ${dataVencimento.toLocaleDateString()}`, 10, 290);
+    doc.text(`Data de Vencimento: ${dataVencimento.toLocaleDateString()}`, 160, 20);
+
     doc.setFontSize(9);
     doc.text('www.vacinacontraroubo.com', 90, 290);
 
     doc.setFontSize(13);
-    doc.text(` ${cliente.nome}`, 10, 51);
+    doc.text(` ${cliente.nome}`, 10, 61);
     doc.setFontSize(10);
-    doc.text(` ${cliente.email}`, 10, 61);
+    doc.text(` ${cliente.email}`, 10, 71);
     doc.setFontSize(9);
-    doc.text(` CNPJ/CPF: ${cliente.cpfCnpj}`, 10, 56);
-    doc.text(`${cliente.telefone}`, 11, 66);
+    doc.text(` CNPJ/CPF: ${cliente.cpfCnpj}`, 10, 66);
+    doc.text(`${cliente.telefone}`, 11, 76);
+
+    // Adiciona os dados de indicação
+    if (indicacao.nome && indicacao.email) {
+        doc.setFontSize(12);
+        doc.text('Indicação:', 10, 86);
+        doc.setFontSize(10);
+        doc.text(`Nome: ${indicacao.nome}`, 10, 92);
+        doc.text(`Email: ${indicacao.email}`, 10, 98);
+    }
 
     let valorTotal = 0;
     const rows = veiculosAdicionados.map((item) => {
@@ -227,7 +276,7 @@ function gerarOrcamento() {
     doc.autoTable({
         head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário', 'Valor Total']],
         body: rows,
-        startY: 75,
+        startY: 105,
         theme: 'grid'
     });
 
@@ -275,7 +324,6 @@ function gerarOrcamento() {
 function gerarOrcamentoSemValor() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
     const dataEmissao = new Date();
     const dataVencimento = new Date();
     dataVencimento.setMonth(dataVencimento.getMonth() + 1);
@@ -306,6 +354,15 @@ function gerarOrcamentoSemValor() {
     doc.text(` CNPJ/CPF: ${cliente.cpfCnpj}`, 10, 56);
     doc.text(`${cliente.telefone}`, 11, 66);
 
+    // Adiciona os dados de indicação
+    if (indicacao.nome && indicacao.email) {
+        doc.setFontSize(12);
+        doc.text('Indicação:', 10, 76);
+        doc.setFontSize(10);
+        doc.text(`Nome: ${indicacao.nome}`, 10, 82);
+        doc.text(`Email: ${indicacao.email}`, 10, 88);
+    }
+
     const rows = veiculosAdicionados.map((item) => {
         const valorVeiculo = veiculos[item.tipoVeiculo];
         const valorImplemento = implementos[item.tipoImplemento];
@@ -335,14 +392,14 @@ function gerarOrcamentoSemValor() {
         doc.autoTable({
             head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário', 'Valor Final com Desconto']],
             body: rows,
-            startY: 75,
+            startY: 95,
             theme: 'grid'
         });
     } else {
         doc.autoTable({
             head: [['Veículo', 'Implemento', 'Quantidade', 'Valor Unitário']],
             body: rows,
-            startY: 75,
+            startY: 95,
             theme: 'grid'
         });
     }
@@ -374,8 +431,6 @@ function gerarOrcamentoSemValor() {
     doc.save(`orcamento_sem_valor_${numeroOrcamento}.pdf`);
 }
 
-
-
 function resetarOrcamento() {
     veiculosAdicionados = [];
     desconto = 0;
@@ -383,11 +438,13 @@ function resetarOrcamento() {
     garantia = '';
     registro = '';
     condicaoPagamento = '';
+    indicacao = {};
     document.getElementById('form-cadastrar-cliente').reset();
     document.getElementById('form-adicionar').reset();
     document.getElementById('porcentagem-desconto').value = '';
     document.getElementById('garantia').value = '6 meses';
     document.getElementById('registro').value = '1 ano';
     document.getElementById('condicao-pagamento').value = '';
+    document.getElementById('form-indicacao').reset();
     mostrarTela('tela-inicial');
 }
